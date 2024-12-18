@@ -1,0 +1,16 @@
+{
+    "BTC": [
+        {
+            "condition": ">",
+            "threshold": 110000
+        },
+        {
+            "condition": "<",
+            "threshold": 90000
+        },
+        {
+            "condition": ">",
+            "threshold": 104091
+        }
+    ]
+}
