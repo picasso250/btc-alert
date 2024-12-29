@@ -5,33 +5,34 @@ from datetime import datetime
 import time
 import sqlite3
 
-# 初始化 SQLite 数据库
+# Initialize SQLite database
 conn = sqlite3.connect('prices.db')
 cursor = conn.cursor()
 
-# 创建表（如果不存在）
+# Create table (if it doesn't exist)
 cursor.execute('''
-CREATE TABLE IF NOT EXISTS btc_prices (
+CREATE TABLE IF NOT EXISTS crypto_prices (
     id INTEGER PRIMARY KEY,
     timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+    crypto TEXT,
     price REAL
 )
 ''')
 
 def show_msg(param1, param2):
-    # 定义AutoHotkey脚本路径
+    # Define AutoHotkey script path
     ahk_script_path = 'show_msg.ahk'
 
-    # 构建命令
+    # Construct command
     auto_hotkey_path = r'C:\Program Files\AutoHotkey\v2\AutoHotkey64.exe'
     command = [auto_hotkey_path, ahk_script_path, param1, param2]
 
-    # 调用AutoHotkey脚本
-    result = subprocess.run(command)
+    # Invoke AutoHotkey script
+    subprocess.run(command)
 
 def get_config():
-    json_config = json.load(open('config.json', 'r'))
-    return json_config
+    with open('config.json', 'r') as f:
+        return json.load(f)
 
 def validate_config(condition, threshold):
     if condition not in ['<', '>']:
@@ -40,19 +41,21 @@ def validate_config(condition, threshold):
         return False
     return True
 
-def fetch_btc_price():
+def fetch_crypto_price(crypto_ids):
     """
-    Fetches the current BTC price using the CoinGecko API.
-    Returns the price in USD or raises an exception if the API call fails.
+    Fetches the current price for the specified cryptocurrencies using the CoinGecko API.
+    :param crypto_ids: List of cryptocurrency IDs to fetch prices for.
+    :return: Dictionary of {crypto: price} or raises an exception if the API call fails.
     """
-    url = "https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd"
+    ids = ','.join(crypto_ids)
+    url = f"https://api.coingecko.com/api/v3/simple/price?ids={ids}&vs_currencies=usd"
     try:
         response = requests.get(url)
         response.raise_for_status()  # Raise an exception for HTTP errors
         data = response.json()
-        return data["bitcoin"]["usd"]
+        return {crypto: data[crypto]["usd"] for crypto in crypto_ids}
     except requests.exceptions.RequestException as e:
-        print(f"Error fetching BTC price: {e}")
+        print(f"Error fetching crypto prices: {e}")
         raise
     except KeyError:
         print("Unexpected response format.")
@@ -61,7 +64,7 @@ def fetch_btc_price():
 def check_price_condition(price, threshold, condition):
     """
     Checks if the price meets the specified condition.
-    :param price: Current BTC price
+    :param price: Current price
     :param threshold: Price threshold to compare against
     :param condition: Condition to check ('>' or '<')
     :return: Result message
@@ -81,43 +84,51 @@ def check_price_condition(price, threshold, condition):
 
 if __name__ == "__main__":
     try:
-        config = get_config()['BTC']
-        for item in config:
-            condition = item['condition']
-            threshold = item['threshold']
+        config = get_config()
+        crypto_configs = config
 
-            if not validate_config(condition, threshold):
-                raise ValueError("Invalid config")
+        # Validate configuration
+        for crypto_name in crypto_configs:
+            crypto = crypto_configs[crypto_name]
+            for c in crypto:
+                condition = c['condition']
+                threshold = c['threshold']
 
-        # 主循环
+                if not validate_config(condition, threshold):
+                    raise ValueError("Invalid config")
+
+        # Main loop
         while True:
-            # 获取 BTC 价格
-            btc_price = fetch_btc_price()
+            crypto_ids = [crypto for crypto in crypto_configs]
 
-            # 将价格插入数据库
-            cursor.execute('INSERT INTO btc_prices (price) VALUES (?)', (btc_price,))
-            conn.commit()
+            # Fetch crypto prices
+            prices = fetch_crypto_price(crypto_ids)
 
-            # 打印日志（可选）
-            print(f'Logged BTC price: {btc_price}')
+            for crypto_name, price in prices.items():
+                # Insert price into database
+                cursor.execute('INSERT INTO crypto_prices (crypto, price) VALUES (?, ?)', (crypto_name, price))
+                conn.commit()
 
-            for item in config:
-                condition = item['condition']   
-                threshold = item['threshold']
+                # Log (optional)
+                print(f'Logged {crypto_name} price: {price}')
 
-                result = check_price_condition(btc_price, threshold, condition)
+                # Check conditions for each crypto
+                for c in crypto_configs[crypto_name]:
+                    condition = c['condition']
+                    threshold = c['threshold']
 
-                if result:
-                    show_msg(result, "BTC Price Out of Range!")
+                    result = check_price_condition(price, threshold, condition)
 
-            # 等待 1 小时
+                    if result:
+                        show_msg(result, f"{crypto.upper()} Price Alert!")
+
+            # Wait 1 hour
             time.sleep(3600)
 
-        # 关闭数据库连接（理论上这个永远不会到达）
+        # Close database connection (this is never reached theoretically)
         conn.close()
 
     except ValueError:
         print("Invalid input. Please enter a valid number for the price threshold.")
     except Exception as e:
         print(f"An error occurred: {e}")
-

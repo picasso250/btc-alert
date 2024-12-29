@@ -1,5 +1,5 @@
 {
-    "BTC": [
+    "bitcoin": [
         {
             "condition": ">",
             "threshold": 110000
@@ -7,10 +7,16 @@
         {
             "condition": "<",
             "threshold": 90000
-        },
+        }
+    ],
+    "dogecoin": [
         {
             "condition": ">",
-            "threshold": 104091
+            "threshold": 0.34
+        },
+        {
+            "condition": "<",
+            "threshold": 0.30
         }
     ]
 }
