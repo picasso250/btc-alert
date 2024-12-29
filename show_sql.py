@@ -1,11 +1,11 @@
 import sqlite3
 
 # 打开数据库文件
-conn = sqlite3.connect('btc_prices.db')
+conn = sqlite3.connect('prices.db')
 cursor = conn.cursor()
 
 # 执行 SELECT 语句
-cursor.execute('SELECT * FROM btc_prices')
+cursor.execute('SELECT * FROM crypto_prices')
 
 # 获取所有结果
 rows = cursor.fetchall()
