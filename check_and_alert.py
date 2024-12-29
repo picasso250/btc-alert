@@ -6,7 +6,7 @@ import time
 import sqlite3
 
 # 初始化 SQLite 数据库
-conn = sqlite3.connect('btc_prices.db')
+conn = sqlite3.connect('prices.db')
 cursor = conn.cursor()
 
 # 创建表（如果不存在）
