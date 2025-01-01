@@ -61,6 +61,21 @@ def fetch_crypto_price(crypto_ids):
         print("Unexpected response format.")
         raise
 
+def get_previous_price(crypto_name):
+    """
+    Gets the previous price from the database.
+    :param crypto_name: Name of the cryptocurrency
+    :return: Previous price or None if not found
+    """
+    cursor.execute('''
+        SELECT price FROM crypto_prices 
+        WHERE crypto = ? 
+        ORDER BY timestamp DESC 
+        LIMIT 1 OFFSET 1
+    ''', (crypto_name,))
+    result = cursor.fetchone()
+    return result[0] if result else None
+
 def check_price_condition(price, min_val, max_val):
     """
     Checks if the price is outside the specified range.
@@ -75,10 +90,25 @@ def check_price_condition(price, min_val, max_val):
         return f"${price} is above maximum ${max_val}."
     return None
 
+def check_grid_change(current_price, previous_price, grid_size):
+    """
+    Checks if price change exceeds grid size.
+    :param current_price: Current price
+    :param previous_price: Previous price
+    :param grid_size: Grid size threshold
+    :return: Alert message if change exceeds grid, else None
+    """
+    if previous_price is None:
+        return None
+    change = abs(current_price - previous_price)
+    if change >= grid_size:
+        direction = "up" if current_price > previous_price else "down"
+        return f"Price moved {direction} by ${change:.2f} (exceeds grid of ${grid_size})"
+    return None
+
 if __name__ == "__main__":
     try:
-        config = get_config()
-        crypto_configs = config
+        crypto_configs = get_config()
 
         # Validate configuration
         for crypto_name in crypto_configs:
@@ -107,11 +137,18 @@ if __name__ == "__main__":
                 # Check conditions for each crypto
                 min_val = crypto_configs[crypto_name]['min']
                 max_val = crypto_configs[crypto_name]['max']
+                grid_size = crypto_configs[crypto_name]['grid_size']
                 
-                result = check_price_condition(price, min_val, max_val)
-
-                if result:
-                    show_msg(result, f"{crypto_name.upper()} Price Alert!")
+                # Check price range condition
+                range_result = check_price_condition(price, min_val, max_val)
+                if range_result:
+                    show_msg(range_result, f"{crypto_name.upper()} Price Alert!")
+                
+                # Check grid-based price change
+                previous_price = get_previous_price(crypto_name)
+                grid_result = check_grid_change(price, previous_price, grid_size)
+                if grid_result:
+                    show_msg(grid_result, f"{crypto_name.upper()} Grid Alert!")
 
             # Wait half hour
             time.sleep(3600/2)
