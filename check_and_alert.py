@@ -34,10 +34,10 @@ def get_config():
     with open('config.json', 'r') as f:
         return json.load(f)
 
-def validate_config(condition, threshold):
-    if condition not in ['<', '>']:
+def validate_config(min_val, max_val):
+    if not isinstance(min_val, (int, float)) or not isinstance(max_val, (int, float)):
         return False
-    if not isinstance(threshold, (int, float)):
+    if min_val >= max_val:
         return False
     return True
 
@@ -61,26 +61,19 @@ def fetch_crypto_price(crypto_ids):
         print("Unexpected response format.")
         raise
 
-def check_price_condition(price, threshold, condition):
+def check_price_condition(price, min_val, max_val):
     """
-    Checks if the price meets the specified condition.
+    Checks if the price is outside the specified range.
     :param price: Current price
-    :param threshold: Price threshold to compare against
-    :param condition: Condition to check ('>' or '<')
-    :return: Result message
+    :param min_val: Minimum price threshold
+    :param max_val: Maximum price threshold
+    :return: Result message if price is outside range, else None
     """
-    if condition == '>':
-        if price > threshold:
-            return f"${price} is greater than ${threshold}."
-        else:
-            return None
-    elif condition == '<':
-        if price < threshold:
-            return f"${price} is less than ${threshold}."
-        else:
-            return None
-    else:
-        return None
+    if price < min_val:
+        return f"${price} is below minimum ${min_val}."
+    elif price > max_val:
+        return f"${price} is above maximum ${max_val}."
+    return None
 
 if __name__ == "__main__":
     try:
@@ -90,12 +83,11 @@ if __name__ == "__main__":
         # Validate configuration
         for crypto_name in crypto_configs:
             crypto = crypto_configs[crypto_name]
-            for c in crypto:
-                condition = c['condition']
-                threshold = c['threshold']
-
-                if not validate_config(condition, threshold):
-                    raise ValueError("Invalid config")
+            min_val = crypto['min']
+            max_val = crypto['max']
+            
+            if not validate_config(min_val, max_val):
+                raise ValueError("Invalid config")
 
         # Main loop
         while True:
@@ -113,17 +105,16 @@ if __name__ == "__main__":
                 print(f'Logged {crypto_name} price: {price}')
 
                 # Check conditions for each crypto
-                for c in crypto_configs[crypto_name]:
-                    condition = c['condition']
-                    threshold = c['threshold']
+                min_val = crypto_configs[crypto_name]['min']
+                max_val = crypto_configs[crypto_name]['max']
+                
+                result = check_price_condition(price, min_val, max_val)
 
-                    result = check_price_condition(price, threshold, condition)
+                if result:
+                    show_msg(result, f"{crypto_name.upper()} Price Alert!")
 
-                    if result:
-                        show_msg(result, f"{crypto.upper()} Price Alert!")
-
-            # Wait 1 hour
-            time.sleep(3600)
+            # Wait half hour
+            time.sleep(3600/2)
 
         # Close database connection (this is never reached theoretically)
         conn.close()

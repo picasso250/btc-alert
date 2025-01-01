@@ -1,22 +1,10 @@
 {
-    "bitcoin": [
-        {
-            "condition": ">",
-            "threshold": 110000
-        },
-        {
-            "condition": "<",
-            "threshold": 90000
-        }
-    ],
-    "dogecoin": [
-        {
-            "condition": ">",
-            "threshold": 0.34
-        },
-        {
-            "condition": "<",
-            "threshold": 0.30
-        }
-    ]
+    "bitcoin": {
+        "min": 90000,
+        "max": 110000
+    },
+    "dogecoin": {
+        "min": 0.30,
+        "max": 0.34
+    }
 }
