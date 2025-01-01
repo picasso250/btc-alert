@@ -8,7 +8,6 @@ import sqlite3
 # Initialize SQLite database
 conn = sqlite3.connect('prices.db')
 cursor = conn.cursor()
-
 # Create table (if it doesn't exist)
 cursor.execute('''
 CREATE TABLE IF NOT EXISTS crypto_prices (
@@ -67,6 +66,7 @@ def get_previous_price(crypto_name):
     :param crypto_name: Name of the cryptocurrency
     :return: Previous price or None if not found
     """
+    cursor = conn.cursor()
     cursor.execute('''
         SELECT price FROM crypto_prices 
         WHERE crypto = ? 
@@ -90,20 +90,46 @@ def check_price_condition(price, min_val, max_val):
         return f"${price} is above maximum ${max_val}."
     return None
 
+def insert_crypto_price(crypto_name, price):
+    """
+    Inserts cryptocurrency price into the database.
+    :param crypto_name: Name of the cryptocurrency
+    :param price: Current price
+    """
+    cursor = conn.cursor()
+    cursor.execute('INSERT INTO crypto_prices (crypto, price) VALUES (?, ?)', (crypto_name, price))
+    conn.commit()
+
+def get_up_down_grid(price, grid_size):
+    """
+    Calculates upper and lower grid bounds for a given price.
+    :param price: Current price
+    :param grid_size: Size of each grid
+    :return: Tuple of (lower_bound, upper_bound)
+    """
+    down = int(price / grid_size) * grid_size
+    up = down + grid_size
+    return (down, up)
 def check_grid_change(current_price, previous_price, grid_size):
     """
-    Checks if price change exceeds grid size.
+    Checks if price has moved to a different grid level.
     :param current_price: Current price
     :param previous_price: Previous price
-    :param grid_size: Grid size threshold
-    :return: Alert message if change exceeds grid, else None
+    :param grid_size: Size of each grid
+    :return: Alert message if grid level changed, else None
     """
     if previous_price is None:
         return None
-    change = abs(current_price - previous_price)
-    if change >= grid_size:
+        
+    # Get current and previous grid bounds
+    current_down, current_up = get_up_down_grid(current_price, grid_size)
+    prev_down, prev_up = get_up_down_grid(previous_price, grid_size)
+    
+    # Check if grid bounds have changed
+    if current_down != prev_down or current_up != prev_up:
+        change = abs(current_price - previous_price)
         direction = "up" if current_price > previous_price else "down"
-        return f"Price moved {direction} by ${change:.2f} (exceeds grid of ${grid_size})"
+        return f"Price moved {direction} by ${change:.2f} (new grid: ${current_down}-${current_up})"
     return None
 
 if __name__ == "__main__":
@@ -128,8 +154,7 @@ if __name__ == "__main__":
 
             for crypto_name, price in prices.items():
                 # Insert price into database
-                cursor.execute('INSERT INTO crypto_prices (crypto, price) VALUES (?, ?)', (crypto_name, price))
-                conn.commit()
+                insert_crypto_price(crypto_name, price)
 
                 # Log (optional)
                 print(f'Logged {crypto_name} price: {price}')
