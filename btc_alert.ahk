@@ -18,6 +18,10 @@ Run('show_msg.ahk "BTC价格监控" "程序已启动"')
 A_IconTip := "BTC价格监控"
 TraySetIcon("shell32.dll", 44)  ; 使用系统自带的股票相关图标（44号图标是股票图表）
 
+; 每分钟更新价格
+SetTimer(UpdatePrices, 60000)
+UpdatePrices()  ; 立即执行一次
+
 ; 右键菜单
 A_TrayMenu.Delete()
 A_TrayMenu.Add("退出", ExitScript)
@@ -36,4 +40,27 @@ ExitScript(*) {
     ; 终止python进程
     ProcessClose(PID)
     ExitApp()
+}
+
+StdOutToVar(cmd) {
+    shell := ComObject("WScript.Shell")
+    exec := shell.Exec(cmd)
+    return exec.StdOut.ReadAll()
+}
+
+UpdatePrices() {
+    ; 调用python脚本获取最新价格
+    try {
+        ; 使用COM对象捕获python输出
+        output := StdOutToVar('pythonw.exe get_latest_prices.py')
+        
+        ; 更新托盘提示
+        A_IconTip := output
+    } catch as e {
+        A_IconTip := "获取价格失败: " e.Message
+        ; 记录错误到日志文件
+        try {
+            FileAppend("[" A_Now "] " e.Message "`n", A_ScriptDir "\error.log")
+        }
+    }
 }

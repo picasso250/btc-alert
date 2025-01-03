@@ -151,11 +151,6 @@ if __name__ == "__main__":
             # Fetch crypto prices
             prices = fetch_crypto_price(crypto_ids)
 
-            # Show summary of all prices
-            price_summary = "\n".join([f"{crypto.upper()}: ${price:.2f}" 
-                                     for crypto, price in prices.items()])
-            show_msg(price_summary, "Crypto Prices Summary")
-
             for crypto_name, price in prices.items():
 
                 # Insert price into database
