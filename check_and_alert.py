@@ -129,7 +129,7 @@ def check_grid_change(current_price, previous_price, grid_size):
     if current_down != prev_down or current_up != prev_up:
         change = abs(current_price - previous_price)
         direction = "up" if current_price > previous_price else "down"
-        return f"Price moved {direction} by ${change:.2f} (new grid: ${current_down}-${current_up})"
+        return f"Price moved {direction} to ${current_price:.2f} (new grid: ${current_down}-${current_up})"
     return None
 
 if __name__ == "__main__":
