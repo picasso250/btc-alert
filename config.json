@@ -6,7 +6,7 @@
     },
     "dogecoin": {
         "min": 0.30,
-        "max": 0.34,
+        "max": 0.40,
         "grid_size": 0.1
     }
 }

@@ -85,9 +85,9 @@ def check_price_condition(price, min_val, max_val):
     :return: Result message if price is outside range, else None
     """
     if price < min_val:
-        return f"${price} is below minimum ${min_val}."
+        return f"${price} is below ${min_val}."
     elif price > max_val:
-        return f"${price} is above maximum ${max_val}."
+        return f"${price} is above ${max_val}."
     return None
 
 def insert_crypto_price(crypto_name, price):
@@ -134,25 +134,30 @@ def check_grid_change(current_price, previous_price, grid_size):
 
 if __name__ == "__main__":
     try:
-        crypto_configs = get_config()
-
-        # Validate configuration
-        for crypto_name in crypto_configs:
-            crypto = crypto_configs[crypto_name]
-            min_val = crypto['min']
-            max_val = crypto['max']
-            
-            if not validate_config(min_val, max_val):
-                raise ValueError("Invalid config")
-
         # Main loop
         while True:
+            # Load and validate config on each iteration
+            crypto_configs = get_config()
+            for crypto_name in crypto_configs:
+                crypto = crypto_configs[crypto_name]
+                min_val = crypto['min']
+                max_val = crypto['max']
+                
+                if not validate_config(min_val, max_val):
+                    raise ValueError("Invalid config")
+
             crypto_ids = [crypto for crypto in crypto_configs]
 
             # Fetch crypto prices
             prices = fetch_crypto_price(crypto_ids)
 
+            # Show summary of all prices
+            price_summary = "\n".join([f"{crypto.upper()}: ${price:.2f}" 
+                                     for crypto, price in prices.items()])
+            show_msg(price_summary, "Crypto Prices Summary")
+
             for crypto_name, price in prices.items():
+
                 # Insert price into database
                 insert_crypto_price(crypto_name, price)
 
@@ -168,6 +173,7 @@ if __name__ == "__main__":
                 range_result = check_price_condition(price, min_val, max_val)
                 if range_result:
                     show_msg(range_result, f"{crypto_name.upper()} Price Alert!")
+                    continue
                 
                 # Check grid-based price change
                 previous_price = get_previous_price(crypto_name)
