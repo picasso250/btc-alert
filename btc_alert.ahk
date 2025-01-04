@@ -2,9 +2,12 @@
 SendMode("Input")
 SetWorkingDir(A_ScriptDir)
 
+; 获取Python可执行文件路径，默认为pythonw.exe
+pythonExe := A_Args.Length > 0 ? A_Args[1] : "pythonw.exe"
+
 ; 启动python脚本
 try {
-    Run("pythonw.exe check_and_alert.py",,, &PID)
+    Run(pythonExe " check_and_alert.py",,, &PID)
     ; 定期检查python进程是否仍在运行
     SetTimer(CheckPythonProcess, 5000)
 } catch as e {
@@ -49,7 +52,7 @@ UpdatePrices() {
     ; 调用python脚本获取最新价格
     try {
         ; 使用COM对象捕获python输出
-        output := StdOutToVar('pythonw.exe get_latest_prices.py')
+        output := StdOutToVar(pythonExe ' get_latest_prices.py')
         
         ; 更新托盘提示
         A_IconTip := output
