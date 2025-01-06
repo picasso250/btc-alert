@@ -25,11 +25,9 @@ def get_latest_prices():
     conn.close()
     
     # 格式化输出
-    tip_text = f"Prices at {datetime.now().strftime('%H:%M')}\n"
-    for coin, price in prices.items():
-        tip_text += f"{coin}: {price}\n"
-    
-    return tip_text.strip()
+    lines = [f"Prices at {datetime.now().strftime('%H:%M')}"]
+    lines.extend(f"{coin}: {price}" for coin, price in prices.items())
+    return "\n".join(lines)
 
 if __name__ == "__main__":
     try:

@@ -24,6 +24,8 @@ UpdatePrices()  ; 立即执行一次
 
 ; 右键菜单
 A_TrayMenu.Delete()
+A_TrayMenu.Add("显示界面", (*) => Run(pythonExe " show_sql_gui.py"))
+A_TrayMenu.Add("更多价格", (*) => Run("https://coincodex.com/"))
 A_TrayMenu.Add("退出", ExitScript)
 
 ; 保持脚本运行
