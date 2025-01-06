@@ -48,14 +48,11 @@ def fetch_crypto_price(crypto_ids):
     """
     ids = ','.join(crypto_ids)
     url = f"https://api.coingecko.com/api/v3/simple/price?ids={ids}&vs_currencies=usd"
+    response = requests.get(url)
+    response.raise_for_status()  # Raise an exception for HTTP errors
     try:
-        response = requests.get(url)
-        response.raise_for_status()  # Raise an exception for HTTP errors
         data = response.json()
         return {crypto: data[crypto]["usd"] for crypto in crypto_ids}
-    except requests.exceptions.RequestException as e:
-        print(f"Error fetching crypto prices: {e}")
-        raise
     except KeyError:
         print("Unexpected response format.")
         raise
@@ -149,7 +146,12 @@ if __name__ == "__main__":
             crypto_ids = [crypto for crypto in crypto_configs]
 
             # Fetch crypto prices
-            prices = fetch_crypto_price(crypto_ids)
+            try:
+                prices = fetch_crypto_price(crypto_ids)
+            except requests.exceptions.RequestException as e:
+                print(f"API request failed: {e}")
+                time.sleep(600)  # Sleep for 10 minutes
+                continue
 
             for crypto_name, price in prices.items():
 
