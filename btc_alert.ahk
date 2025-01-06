@@ -49,16 +49,15 @@ StdOutToVar(cmd) {
 }
 
 UpdatePrices() {
-    ; 调用python脚本获取最新价格
     try {
         ; 使用COM对象捕获python输出
         output := StdOutToVar(pythonExe ' get_latest_prices.py')
         
-        ; 更新托盘提示
+        ; Update tray tip
         A_IconTip := output
     } catch as e {
         A_IconTip := "获取价格失败: " e.Message
-        ; 记录错误到日志文件
+        ; Log error
         try {
             FileAppend("[" A_Now "] " e.Message "`n", A_ScriptDir "\error.log")
         }

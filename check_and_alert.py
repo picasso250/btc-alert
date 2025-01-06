@@ -141,7 +141,9 @@ if __name__ == "__main__":
                 max_val = crypto['max']
                 
                 if not validate_config(min_val, max_val):
-                    raise ValueError("Invalid config")
+                    print("Invalid config detected")
+                    time.sleep(600)  # Sleep for 10 minutes
+                    continue
 
             crypto_ids = [crypto for crypto in crypto_configs]
 
@@ -154,7 +156,6 @@ if __name__ == "__main__":
                 continue
 
             for crypto_name, price in prices.items():
-
                 # Insert price into database
                 insert_crypto_price(crypto_name, price)
 
@@ -181,10 +182,8 @@ if __name__ == "__main__":
             # Wait half hour
             time.sleep(3600/2)
 
-        # Close database connection (this is never reached theoretically)
+    except KeyboardInterrupt:
+        print("\nShutting down...")
+    finally:
         conn.close()
-
-    except ValueError:
-        print("Invalid input. Please enter a valid number for the price threshold.")
-    except Exception as e:
-        print(f"An error occurred: {e}")
+        print("Database connection closed")
