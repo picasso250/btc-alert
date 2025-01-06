@@ -155,6 +155,9 @@ if __name__ == "__main__":
                 time.sleep(600)  # Sleep for 10 minutes
                 continue
 
+            # Initialize combined message
+            combined_msg = ""
+            
             for crypto_name, price in prices.items():
                 # Insert price into database
                 insert_crypto_price(crypto_name, price)
@@ -170,14 +173,17 @@ if __name__ == "__main__":
                 # Check price range condition
                 range_result = check_price_condition(price, min_val, max_val)
                 if range_result:
-                    show_msg(range_result, f"{crypto_name.upper()} Price Alert!")
-                    continue
+                    combined_msg += f"{crypto_name.upper()}: {range_result}\n"
                 
                 # Check grid-based price change
                 previous_price = get_previous_price(crypto_name)
                 grid_result = check_grid_change(price, previous_price, grid_size)
                 if grid_result:
-                    show_msg(grid_result, f"{crypto_name.upper()} Grid Alert!")
+                    combined_msg += f"{crypto_name.upper()}: {grid_result}\n"
+
+            # Show combined message if there are any alerts
+            if len(combined_msg) > 0:
+                show_msg(combined_msg, "Crypto Price Alerts")
 
             # Wait half hour
             time.sleep(3600/2)
