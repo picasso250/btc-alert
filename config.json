@@ -2,7 +2,7 @@
     "bitcoin": {
         "min": 90000,
         "max": 110000,
-        "grid_size": 1000
+        "grid_size": 10000
     },
     "dogecoin": {
         "min": 0.30,
