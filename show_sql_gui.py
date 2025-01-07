@@ -1,6 +1,8 @@
 import sqlite3
 import tkinter as tk
 from tkinter import ttk
+import json
+
 
 class CryptoPriceViewer:
     # 字体定义
@@ -27,16 +29,31 @@ class CryptoPriceViewer:
 
     def load_data(self):
         try:
+            # 加载配置文件
+            with open('config.json') as f:
+                config = json.load(f)
+            cryptos = list(config.keys())
+            
             # 连接数据库
             conn = sqlite3.connect('prices.db')
             cursor = conn.cursor()
             
-            # 获取每种币的最新价格
-            cursor.execute('''
-                SELECT id, crypto, price, MAX(timestamp) 
-                FROM crypto_prices 
+            # 获取配置中每种币的最新价格
+            # 首先获取每个币种的最新id
+            cursor.execute(f'''
+                SELECT crypto, MAX(id) as latest_id
+                FROM crypto_prices
+                WHERE crypto IN ({','.join('?' * len(cryptos))})
                 GROUP BY crypto
-            ''')
+            ''', cryptos)
+            
+            # 获取这些id对应的完整数据
+            latest_ids = [row[1] for row in cursor.fetchall()]
+            cursor.execute('''
+                SELECT id, crypto, price, timestamp
+                FROM crypto_prices
+                WHERE id IN ({})
+            '''.format(','.join('?' * len(latest_ids))), latest_ids)
             rows = cursor.fetchall()
             
             # 显示数据

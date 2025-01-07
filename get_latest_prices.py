@@ -15,17 +15,18 @@ def get_latest_prices():
     for coin in coins:
         # 查询每个币种的最新价格
         cursor.execute(
-            "SELECT price FROM crypto_prices WHERE crypto=? ORDER BY timestamp DESC LIMIT 1",
+            "SELECT price, timestamp FROM crypto_prices WHERE crypto=? ORDER BY timestamp DESC LIMIT 1",
             (coin,)
         )
         result = cursor.fetchone()
         if result:
             prices[coin] = result[0]
+            latest_timestamp = result[1]
     
     conn.close()
     
     # 格式化输出
-    lines = [f"Prices at {datetime.now().strftime('%H:%M')}"]
+    lines = [f"Prices at {latest_timestamp}"]
     lines.extend(f"{coin}: {price}" for coin, price in prices.items())
     return "\n".join(lines)
 

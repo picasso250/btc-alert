@@ -94,7 +94,8 @@ def insert_crypto_price(crypto_name, price):
     :param price: Current price
     """
     cursor = conn.cursor()
-    cursor.execute('INSERT INTO crypto_prices (crypto, price) VALUES (?, ?)', (crypto_name, price))
+    cursor.execute('INSERT INTO crypto_prices (crypto, price, timestamp) VALUES (?, ?, ?)', 
+                  (crypto_name, price, datetime.now()))
     conn.commit()
 
 def get_up_down_grid(price, grid_size):
