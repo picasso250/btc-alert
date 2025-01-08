@@ -10,7 +10,6 @@
         "grid_size": 0.1
     },
     "ethereum": {
-        "min": 3000,
         "max": 4000,
         "grid_size": 100
     }

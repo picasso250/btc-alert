@@ -7,7 +7,7 @@ pythonExe := A_Args.Length > 0 ? A_Args[1] : "pythonw.exe"
 
 ; 启动python脚本
 try {
-    Run(pythonExe " check_and_alert.py",,, &PID)
+    Run(pythonExe " price_checker.py",,, &PID)
     ; 定期检查python进程是否仍在运行
     SetTimer(CheckPythonProcess, 5000)
 } catch as e {
