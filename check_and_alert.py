@@ -34,6 +34,13 @@ def get_config():
         return json.load(f)
 
 def validate_config(min_val, max_val):
+    # If both are None, config is valid
+    if min_val is None and max_val is None:
+        return True
+    # If only one is None, config is invalid
+    if min_val is None or max_val is None:
+        return False
+    # Both have values - validate them
     if not isinstance(min_val, (int, float)) or not isinstance(max_val, (int, float)):
         return False
     if min_val >= max_val:
@@ -77,10 +84,13 @@ def check_price_condition(price, min_val, max_val):
     """
     Checks if the price is outside the specified range.
     :param price: Current price
-    :param min_val: Minimum price threshold
-    :param max_val: Maximum price threshold
+    :param min_val: Minimum price threshold (optional)
+    :param max_val: Maximum price threshold (optional)
     :return: Result message if price is outside range, else None
     """
+    # Skip check if either value is None
+    if min_val is None or max_val is None:
+        return None
     if price < min_val:
         return f"${price} is below ${min_val}."
     elif price > max_val:
@@ -138,11 +148,11 @@ if __name__ == "__main__":
             crypto_configs = get_config()
             for crypto_name in crypto_configs:
                 crypto = crypto_configs[crypto_name]
-                min_val = crypto['min']
-                max_val = crypto['max']
+                min_val = crypto.get('min')  # Use get() to handle missing key
+                max_val = crypto.get('max')  # Use get() to handle missing key
                 
                 if not validate_config(min_val, max_val):
-                    print("Invalid config detected")
+                    print(f"Invalid config detected for {crypto_name}")
                     time.sleep(600)  # Sleep for 10 minutes
                     continue
 
@@ -167,8 +177,8 @@ if __name__ == "__main__":
                 print(f'Logged {crypto_name} price: {price}')
 
                 # Check conditions for each crypto
-                min_val = crypto_configs[crypto_name]['min']
-                max_val = crypto_configs[crypto_name]['max']
+                min_val = crypto_configs[crypto_name].get('min')
+                max_val = crypto_configs[crypto_name].get('max') 
                 grid_size = crypto_configs[crypto_name]['grid_size']
                 
                 # Check price range condition
