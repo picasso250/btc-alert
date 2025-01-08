@@ -1,22 +1,9 @@
 import requests
 import json
 import subprocess
-from datetime import datetime
 import time
-import sqlite3
-
-# Initialize SQLite database
-conn = sqlite3.connect('prices.db')
-cursor = conn.cursor()
-# Create table (if it doesn't exist)
-cursor.execute('''
-CREATE TABLE IF NOT EXISTS crypto_prices (
-    id INTEGER PRIMARY KEY,
-    timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
-    crypto TEXT,
-    price REAL
-)
-''')
+from datetime import datetime
+from db_operations import get_previous_price, insert_crypto_price, close_connection
 
 def show_msg(param1, param2):
     # Define AutoHotkey script path
@@ -50,8 +37,8 @@ def validate_config(min_val, max_val):
 def fetch_crypto_price(crypto_ids):
     """
     Fetches the current price for the specified cryptocurrencies using the CoinGecko API.
-    :param crypto_ids: List of cryptocurrency IDs to fetch prices for.
-    :return: Dictionary of {crypto: price} or raises an exception if the API call fails.
+    :param crypto_ids: List of cryptocurrency IDs to fetch prices for
+    :return: Dictionary of {crypto: price} or raises an exception if the API call fails
     """
     ids = ','.join(crypto_ids)
     url = f"https://api.coingecko.com/api/v3/simple/price?ids={ids}&vs_currencies=usd"
@@ -63,22 +50,6 @@ def fetch_crypto_price(crypto_ids):
     except KeyError:
         print("Unexpected response format.")
         raise
-
-def get_previous_price(crypto_name):
-    """
-    Gets the previous price from the database.
-    :param crypto_name: Name of the cryptocurrency
-    :return: Previous price or None if not found
-    """
-    cursor = conn.cursor()
-    cursor.execute('''
-        SELECT price FROM crypto_prices 
-        WHERE crypto = ? 
-        ORDER BY timestamp DESC 
-        LIMIT 1 OFFSET 1
-    ''', (crypto_name,))
-    result = cursor.fetchone()
-    return result[0] if result else None
 
 def check_price_condition(price, min_val, max_val):
     """
@@ -97,17 +68,6 @@ def check_price_condition(price, min_val, max_val):
         return f"${price} is above ${max_val}."
     return None
 
-def insert_crypto_price(crypto_name, price):
-    """
-    Inserts cryptocurrency price into the database.
-    :param crypto_name: Name of the cryptocurrency
-    :param price: Current price
-    """
-    cursor = conn.cursor()
-    cursor.execute('INSERT INTO crypto_prices (crypto, price, timestamp) VALUES (?, ?, ?)', 
-                  (crypto_name, price, datetime.now()))
-    conn.commit()
-
 def get_up_down_grid(price, grid_size):
     """
     Calculates upper and lower grid bounds for a given price.
@@ -118,6 +78,7 @@ def get_up_down_grid(price, grid_size):
     down = int(price / grid_size) * grid_size
     up = down + grid_size
     return (down, up)
+
 def check_grid_change(current_price, previous_price, grid_size):
     """
     Checks if price has moved to a different grid level.
@@ -202,5 +163,5 @@ if __name__ == "__main__":
     except KeyboardInterrupt:
         print("\nShutting down...")
     finally:
-        conn.close()
+        close_connection()
         print("Database connection closed")

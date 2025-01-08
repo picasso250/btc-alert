@@ -1,3 +1,5 @@
 btc_price.txt
 *.db
 error.log
+__pycache__/
+*.pyc
