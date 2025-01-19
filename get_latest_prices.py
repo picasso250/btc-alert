@@ -26,7 +26,9 @@ def get_latest_prices():
     conn.close()
     
     # 格式化输出
-    lines = [f"Prices at {latest_timestamp}"]
+    # Convert timestamp to datetime and format
+    dt = datetime.strptime(latest_timestamp, "%Y-%m-%d %H:%M:%S.%f")
+    lines = [f"Prices at {dt.strftime('%Y-%m-%d %H:%M')}"]
     lines.extend(f"{coin}: {price}" for coin, price in prices.items())
     return "\n".join(lines)
 
