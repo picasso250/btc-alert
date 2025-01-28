@@ -5,6 +5,14 @@ import time
 from datetime import datetime
 from db_operations import get_previous_price, insert_crypto_price, close_connection
 
+def format_number(num):
+    if num >= 10000:
+        # 转换为k表示法，并四舍五入保留1位小数
+        formatted_num = round(num / 1000, 1)
+        return f"{formatted_num}k"
+    else:
+        return str(num)
+
 def show_msg(param1, param2):
     # Define AutoHotkey script path
     ahk_script_path = 'show_msg.ahk'
@@ -19,20 +27,6 @@ def show_msg(param1, param2):
 def get_config():
     with open('config.json', 'r') as f:
         return json.load(f)
-
-def validate_config(min_val, max_val):
-    # If both are None, config is valid
-    if min_val is None and max_val is None:
-        return True
-    # If only one is None, config is invalid
-    if min_val is None or max_val is None:
-        return False
-    # Both have values - validate them
-    if not isinstance(min_val, (int, float)) or not isinstance(max_val, (int, float)):
-        return False
-    if min_val >= max_val:
-        return False
-    return True
 
 def fetch_crypto_price(crypto_ids):
     """
@@ -50,23 +44,6 @@ def fetch_crypto_price(crypto_ids):
     except KeyError:
         print("Unexpected response format.")
         raise
-
-def check_price_condition(price, min_val, max_val):
-    """
-    Checks if the price is outside the specified range.
-    :param price: Current price
-    :param min_val: Minimum price threshold (optional)
-    :param max_val: Maximum price threshold (optional)
-    :return: Result message if price is outside range, else None
-    """
-    # Skip check if either value is None
-    if min_val is None or max_val is None:
-        return None
-    if price < min_val:
-        return f"${price} is below ${min_val}."
-    elif price > max_val:
-        return f"${price} is above ${max_val}."
-    return None
 
 def get_up_down_grid(price, grid_size):
     """
@@ -98,25 +75,15 @@ def check_grid_change(current_price, previous_price, grid_size):
     if current_down != prev_down or current_up != prev_up:
         change = abs(current_price - previous_price)
         direction = "up" if current_price > previous_price else "down"
-        return f"Price moved {direction} to ${current_price:.2f} (new grid: ${current_down}-${current_up})"
+        return f"Price moved {direction} to ${format_number(current_price)} (new grid: ${format_number(current_down)}-${format_number(current_up)})"
     return None
 
 if __name__ == "__main__":
     try:
         # Main loop
         while True:
-            # Load and validate config on each iteration
+            # Load config on each iteration
             crypto_configs = get_config()
-            for crypto_name in crypto_configs:
-                crypto = crypto_configs[crypto_name]
-                min_val = crypto.get('min')  # Use get() to handle missing key
-                max_val = crypto.get('max')  # Use get() to handle missing key
-                
-                if not validate_config(min_val, max_val):
-                    print(f"Invalid config detected for {crypto_name}")
-                    time.sleep(600)  # Sleep for 10 minutes
-                    continue
-
             crypto_ids = [crypto for crypto in crypto_configs]
 
             # Fetch crypto prices
@@ -137,17 +104,8 @@ if __name__ == "__main__":
                 # Log (optional)
                 print(f'Logged {crypto_name} price: {price}')
 
-                # Check conditions for each crypto
-                min_val = crypto_configs[crypto_name].get('min')
-                max_val = crypto_configs[crypto_name].get('max') 
-                grid_size = crypto_configs[crypto_name]['grid_size']
-                
-                # Check price range condition
-                range_result = check_price_condition(price, min_val, max_val)
-                if range_result:
-                    combined_msg += f"{crypto_name.upper()}: {range_result}\n"
-                
                 # Check grid-based price change
+                grid_size = crypto_configs[crypto_name]['grid_size']
                 previous_price = get_previous_price(crypto_name)
                 grid_result = check_grid_change(price, previous_price, grid_size)
                 if grid_result:
